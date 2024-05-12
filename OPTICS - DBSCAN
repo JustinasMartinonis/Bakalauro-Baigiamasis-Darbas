@@ -1,0 +1,117 @@
+#---------------------------------------------------------------------------------------------------#
+# Author: Justinas Martinonis                                                                       #
+# Algorithm: OPTICS - DBSCAN                                                                        #
+# Description: OPTICS - DBSCAN hybrid algorithm for anomaly detection in simulated DDoS attack data #
+# Use of the code is allowed only if the author is credited!                                        #
+#---------------------------------------------------------------------------------------------------#
+
+
+
+import requests
+import time
+import random
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.cluster import DBSCAN, OPTICS
+from sklearn.preprocessing import RobustScaler
+
+def simulate_traffic(url, num_requests, attack_start_time, attack_intensity, eps_dbscan, min_samples_dbscan, min_samples_optics, num_tries):
+    total_normal_anomaly_count = 0
+    total_attack_anomaly_count = 0
+
+    for iteration in range(num_tries):
+        timestamps = []
+        response_times = []
+
+        for i in range(num_requests):
+            start_time = time.time()
+
+            try:
+                # Simulate normal GET requests
+                response = requests.get(url)
+                elapsed_time = time.time() - start_time
+
+                # Record timestamp and response time
+                timestamps.append(time.time())
+                response_times.append(elapsed_time)
+
+                # Introduce a DDoS attack at a specific timestamp
+                if i == attack_start_time:
+                    print("DDoS Attack Started!")
+                    for _ in range(attack_intensity):
+                        timestamps.append(time.time())
+                        # Increase response time during the attack more distinctly
+                        response_times.append(elapsed_time + random.uniform(0.5, 1))
+                        time.sleep(random.uniform(0.01, 0.05))  # Vary the request interval during the attack
+
+                print(f"Normal Traffic: {response.status_code}, Response Time: {elapsed_time:.4f} seconds")
+                time.sleep(random.uniform(0.01, 0.05))  # Vary the request interval for normal traffic
+
+            except Exception as e:
+                print(f"Error: {e}")
+
+        # Prepare data for clustering
+        data_combined = np.column_stack((timestamps, response_times))
+
+        # DBSCAN Clustering
+        dbscan = DBSCAN(eps=eps_dbscan, min_samples=min_samples_dbscan)
+        dbscan_labels = dbscan.fit_predict(data_combined)
+
+        # OPTICS Clustering
+        optics = OPTICS(min_samples=min_samples_optics, xi = 0.035, min_cluster_size=0.07)
+        optics.fit(data_combined)
+        optics_labels = optics.labels_
+
+        print(dbscan_labels)
+        print(optics_labels)
+
+        # Combine results of DBSCAN and OPTICS using logical OR operation
+        combined_labels = np.logical_or(dbscan_labels == -1, optics_labels == -1)
+
+        # Plot the connections on a 2D scatter plot
+        plt.scatter(timestamps, response_times, c=combined_labels, marker='o', cmap='viridis', label='Normal Traffic')
+
+        # Mark anomalies with red X
+        anomalies = combined_labels
+        plt.scatter(np.array(timestamps)[anomalies], np.array(response_times)[anomalies], marker='x', color='red', label='Anomalies')
+
+        plt.title('Simulated User Requests')
+        plt.xlabel('Timestamp')
+        plt.ylabel('Response Time (seconds)')
+        plt.legend()
+        plt.show()
+
+        # Count anomalies within normal data
+        normal_anomaly_count_1 = np.sum(anomalies[:attack_start_time])
+        normal_anomaly_count_2 = np.sum(anomalies[attack_start_time + attack_intensity:])
+        normal_anomaly_count = normal_anomaly_count_1 + normal_anomaly_count_2
+
+        # Count anomalies during the actual attack
+        attack_anomaly_count = np.sum(anomalies[attack_start_time:attack_start_time + attack_intensity])
+
+        # Accumulate values for averaging
+        total_normal_anomaly_count += normal_anomaly_count
+        total_attack_anomaly_count += attack_anomaly_count
+
+    # Calculate averages after the loop
+    average_normal_anomaly_count = total_normal_anomaly_count / num_tries
+    average_attack_anomaly_count = total_attack_anomaly_count / num_tries
+
+    # Print the average values
+    print(f"Average anomalies detected within normal data: {average_normal_anomaly_count}/{num_requests}")
+    print(f"Average anomalies detected during the actual attack: {average_attack_anomaly_count}/{attack_intensity}")
+    print(eps_dbscan)
+
+if __name__ == "__main__":
+    website_url = "http://example.com"
+    num_requests_to_simulate = 200
+    attack_start_time = 100  # The timestamp at which the DDoS attack starts
+    attack_intensity = 600  # Number of additional requests during the attack
+    num_tries = 10
+
+    # Manually set parameters for DBSCAN and OPTICS
+    eps_dbscan = 0.06
+    min_samples_dbscan = 3
+    min_samples_optics = 6
+
+    simulate_traffic(website_url, num_requests_to_simulate, attack_start_time, attack_intensity, eps_dbscan, min_samples_dbscan, min_samples_optics, num_tries)
