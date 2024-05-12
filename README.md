@@ -1,7 +1,3 @@
-#---------------------------------------------------------------------------------------------------#
-# Author: Justinas Martinonis                                                                       #                          
-#---------------------------------------------------------------------------------------------------#
-
 LT:
   Puslapis skirtas Justino Martinonio Bakalauro Baigiamojo Darbo algoritmų talpinimui.
 Kiekvieno algoritmo main kodo dalyje yra skirta vieta parametrų nustatymui. Įmanomas
@@ -15,5 +11,4 @@ Each algorithm's main part is used for changing parameters to your liking. It is
 to optimize parameters automatically.
 
 Use of algorithms is allowed only with credits to the original author Justinas Martinonis.
-
-####################################################################################################
+----------------------------------------------------------------------
