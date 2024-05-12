@@ -62,9 +62,6 @@ def simulate_traffic(url, num_requests, attack_start_time, attack_intensity, eps
         optics.fit(data_combined)
         optics_labels = optics.labels_
 
-        print(dbscan_labels)
-        print(optics_labels)
-
         # Combine results of DBSCAN and OPTICS using logical OR operation
         combined_labels = np.logical_or(dbscan_labels == -1, optics_labels == -1)
 
