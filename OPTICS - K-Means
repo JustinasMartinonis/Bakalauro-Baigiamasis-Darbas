@@ -70,8 +70,6 @@ def simulate_traffic(url, num_requests, attack_start_time, attack_intensity, num
 
         # Mark anomalies based on distance from cluster centers for KMeans
         kmeans_anomalies = closest_cluster_distances > anomaly_threshold
-        print(kmeans_anomalies)
-        print(optics_labels)
 
         # Combine KMeans and OPTICS anomalies
         combined_anomalies = np.logical_or(kmeans_anomalies, optics_labels == -1)
